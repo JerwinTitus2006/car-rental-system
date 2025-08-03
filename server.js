@@ -20,7 +20,7 @@ app.use(express.json());
 
 // MongoDB Connection
 mongoose.connect(
-  'mongodb+srv://jerwin:9786695671@cluster-1.gkc9g.mongodb.net/?retryWrites=true&w=majority&appName=Cluster-1',
+  'enter your url',
   { useNewUrlParser: true, useUnifiedTopology: true }
 ).then(() => console.log('MongoDB Connected'))
   .catch(err => console.error(err));
