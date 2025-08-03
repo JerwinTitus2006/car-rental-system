@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <div align="center">
       <h1> <img src="screenshots/about.png" width="80px"><br/>Car Rental System</h1>
 </div>
@@ -140,3 +141,6 @@ _Complete rental process workflow_
 - [HTML5](https://developer.mozilla.org/en-US/docs/Web/HTML)
 - [CSS3](https://developer.mozilla.org/en-US/docs/Web/CSS)
 - [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+=======
+# car-rental-system
+>>>>>>> 252172b88670ba5857d8d9bfd08f07a8df3e0f0c
