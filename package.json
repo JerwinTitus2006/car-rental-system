@@ -1,0 +1,25 @@
+{
+  "name": "car-rental-system-zh",
+  "version": "1.0.0",
+  "description": "<div align=\"center\">\r       <h1> <img src=\"screenshots/about.png\" width=\"80px\"><br/>Car Rental System</h1>\r </div>",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jamalihassan0307/Car-Rental-System-zh.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jamalihassan0307/Car-Rental-System-zh/issues"
+  },
+  "homepage": "https://github.com/jamalihassan0307/Car-Rental-System-zh#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "mongoose": "^8.13.2"
+  }
+}

@@ -1,10 +1,22 @@
 const BASE_URL = "https://678f630149875e5a1a919da0.mockapi.io/";
 
+// State management
+let cars = [];
+let rentals = [];
+const carImages = [
+  "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=1600",
+  "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=1600",
+  "https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=1600",
+  "https://images.unsplash.com/photo-1554744512-d6c603f27c54?w=1600",
+  "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1600",
+  "https://images.unsplash.com/photo-1542362567-b07e54358753?w=1600",
+];
+
+// API calls
 async function fetchCars() {
   try {
     const response = await fetch(`${BASE_URL}/cars`);
-    const data = await response.json();
-    cars = data;
+    cars = await response.json();
     updateDashboard();
     renderCars();
   } catch (error) {
@@ -13,17 +25,25 @@ async function fetchCars() {
   }
 }
 
+async function fetchRentals() {
+  try {
+    const response = await fetch(`${BASE_URL}/rentalData`);
+    rentals = await response.json();
+    renderRentals();
+  } catch (error) {
+    console.error("Error fetching rentals:", error);
+    alert("Failed to load rentals. Please try again.");
+  }
+}
+
 async function addCarAPI(carData) {
   try {
     const response = await fetch(`${BASE_URL}/cars`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(carData),
     });
-    const data = await response.json();
-    return data;
+    return await response.json();
   } catch (error) {
     console.error("Error adding car:", error);
     throw new Error("Failed to add car");
@@ -34,13 +54,10 @@ async function updateCarAPI(carId, carData) {
   try {
     const response = await fetch(`${BASE_URL}/cars/${carId}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(carData),
     });
-    const data = await response.json();
-    return data;
+    return await response.json();
   } catch (error) {
     console.error("Error updating car:", error);
     throw new Error("Failed to update car");
@@ -49,24 +66,10 @@ async function updateCarAPI(carId, carData) {
 
 async function deleteCarAPI(carId) {
   try {
-    await fetch(`${BASE_URL}/cars/${carId}`, {
-      method: "DELETE",
-    });
+    await fetch(`${BASE_URL}/cars/${carId}`, { method: "DELETE" });
   } catch (error) {
     console.error("Error deleting car:", error);
     throw new Error("Failed to delete car");
-  }
-}
-
-async function fetchRentals() {
-  try {
-    const response = await fetch(`${BASE_URL}/rentalData`);
-    const data = await response.json();
-    rentals = data;
-    renderRentals();
-  } catch (error) {
-    console.error("Error fetching rentals:", error);
-    alert("Failed to load rentals. Please try again.");
   }
 }
 
@@ -74,42 +77,101 @@ async function addRentalAPI(rentalData) {
   try {
     const response = await fetch(`${BASE_URL}/rentalData`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(rentalData),
     });
-    const data = await response.json();
-    return data;
+    return await response.json();
   } catch (error) {
     console.error("Error adding rental:", error);
     throw new Error("Failed to add rental");
   }
 }
 
-let cars = JSON.parse(localStorage.getItem("cars")) || [];
-let rentals = JSON.parse(localStorage.getItem("rentals")) || [];
-
-function saveData() {
-  localStorage.setItem("cars", JSON.stringify(cars));
-  localStorage.setItem("rentals", JSON.stringify(rentals));
+async function deleteRentalAPI(rentalId) {
+  try {
+    await fetch(`${BASE_URL}/rentalData/${rentalId}`, { method: "DELETE" });
+  } catch (error) {
+    console.error("Error deleting rental:", error);
+    throw new Error("Failed to delete rental");
+  }
 }
 
-const carImages = [
-  "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=1600",
-  "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=1600",
-  "https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=1600",
-  "https://images.unsplash.com/photo-1554744512-d6c603f27c54?w=1600",
-  "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1600",
-  "https://images.unsplash.com/photo-1542362567-b07e54358753?w=1600",
-];
+// UI Functions
+function updateDashboard() {
+  document.getElementById("totalCars").textContent = cars.length;
+  document.getElementById("availableCars").textContent = cars.filter(car => car.available).length;
+  document.getElementById("rentedCars").textContent = cars.filter(car => !car.available).length;
+}
 
-function validateLogin(event) {
-  event.preventDefault();
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+function renderCars() {
+  const carGrid = document.getElementById("carGrid");
+  if (!carGrid) return;
 
-  if (username === "demo" && password === "1234") {
+  const filter = document.getElementById("availabilityFilter")?.value || "all";
+  const filtered = cars.filter(car =>
+    filter === "available" ? car.available : filter === "rented" ? !car.available : true
+  );
+
+  carGrid.innerHTML = filtered.length
+    ? filtered.map(car => `
+      <div class="car-card">
+        <img src="${car.image}" alt="${car.model}" onerror="this.src='${carImages[0]}'">
+        <div class="car-info">
+          <h3>${car.model}</h3>
+          <p class="price">$${car.price} per day</p>
+          <p class="status ${car.available ? "available" : "rented"}">
+            ${car.available ? "● Available" : "● Currently Rented"}
+          </p>
+          <div class="car-actions">
+            <button onclick="${car.available ? `rentCar('${car.id}')` : `returnCar('${car.id}')`}" class="${car.available ? "rent-btn" : "return-btn"}">
+              ${car.available ? "Rent Now" : "Return Car"}
+            </button>
+            <button onclick="deleteCar('${car.id}')" class="delete-btn"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+      </div>
+    `).join("")
+    : '<p class="no-results">No cars available.</p>';
+}
+
+function renderRentals() {
+  const list = document.getElementById("rentalsList");
+  if (!list) return;
+  list.innerHTML = rentals.map(r => `
+    <div class="rental-item">
+      <div class="rental-info">
+        <h3>${r.carModel}</h3>
+        <p>Customer: ${r.customerName}</p>
+        <p>Phone: ${r.phoneNumber}</p>
+        <p>Email: ${r.email}</p>
+        <p>Rental Date: ${r.rentalDate}</p>
+        <p>Duration: ${r.numberOfDays} days</p>
+        <p>Total Price: $${r.totalPrice}</p>
+      </div>
+      <button onclick="deleteRental('${r.id}')" class="delete-btn">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  `).join("");
+}
+
+async function deleteRental(rentalId) {
+  if (confirm("Delete this rental record?")) {
+    try {
+      await deleteRentalAPI(rentalId);
+      await fetchRentals();
+    } catch {
+      alert("Failed to delete rental");
+    }
+  }
+}
+
+// Auth
+function validateLogin(e) {
+  e.preventDefault();
+  const user = document.getElementById("username").value;
+  const pass = document.getElementById("password").value;
+  if (user === "demo" && pass === "1234") {
     localStorage.setItem("isLoggedIn", "true");
     window.location.href = "index.html";
   } else {
@@ -118,109 +180,31 @@ function validateLogin(event) {
 }
 
 function checkLogin() {
-  if (
-    !localStorage.getItem("isLoggedIn") &&
-    !window.location.href.includes("login.html")
-  ) {
-    window.location.href = "login.html";
+  if (!localStorage.getItem("isLoggedIn") && !location.href.includes("login.html")) {
+    location.href = "login.html";
   }
 }
 
 function logout() {
   localStorage.removeItem("isLoggedIn");
-  window.location.href = "login.html";
+  location.href = "login.html";
 }
 
-async function addCar(event) {
-  event.preventDefault();
+// Car operations
+async function addCar(e) {
+  e.preventDefault();
   const model = document.getElementById("carModel").value;
-  const image =
-    document.getElementById("carImage").value ||
-    carImages[Math.floor(Math.random() * carImages.length)];
-  const price = document.getElementById("carPrice").value;
-
-  const newCar = {
-    model,
-    image,
-    price: Number(price),
-    available: true,
-  };
+  const image = document.getElementById("carImage").value || carImages[Math.floor(Math.random() * carImages.length)];
+  const price = Number(document.getElementById("carPrice").value);
 
   try {
-    await addCarAPI(newCar);
-    alert(`Car "${model}" has been added successfully!`);
-    document.getElementById("addCarForm").reset();
+    await addCarAPI({ model, image, price, available: true });
+    alert(`Car "${model}" added successfully!`);
+    e.target.reset();
     closeModal();
     await fetchCars();
-  } catch (error) {
-    alert("Failed to add car. Please try again.");
-  }
-}
-
-function renderCars() {
-  const carGrid = document.getElementById("carGrid");
-  if (!carGrid) return;
-
-  carGrid.innerHTML = "";
-
-  const availabilityFilter = document.getElementById("availabilityFilter");
-  const filterValue = availabilityFilter ? availabilityFilter.value : "all";
-
-  const filteredCars = cars.filter((car) => {
-    if (filterValue === "available") return car.available;
-    if (filterValue === "rented") return !car.available;
-    return true;
-  });
-
-  if (filteredCars.length === 0) {
-    carGrid.innerHTML = '<p class="no-results">No cars available.</p>';
-    return;
-  }
-
-  filteredCars.forEach((car) => {
-    const carCard = document.createElement("div");
-    carCard.className = "car-card";
-    carCard.innerHTML = `
-      <img src="${car.image}" alt="${car.model}" onerror="this.src='${
-      carImages[0]
-    }'">
-      <div class="car-info">
-        <h3>${car.model}</h3>
-        <p class="price">$${car.price} per day</p>
-        <p class="status ${car.available ? "available" : "rented"}">
-          ${car.available ? "● Available" : "● Currently Rented"}
-        </p>
-        <div class="car-actions">
-          <button onclick="rentCar('${car.id}')" class="${
-      car.available ? "rent-btn" : "return-btn"
-    }">
-            ${car.available ? "Rent Now" : "Return Car"}
-          </button>
-          <button onclick="deleteCar('${car.id}')" class="delete-btn">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-      </div>
-    `;
-    carGrid.appendChild(carCard);
-  });
-}
-
-function updateDashboard() {
-  const totalCarsElement = document.getElementById("totalCars");
-  const availableCarsElement = document.getElementById("availableCars");
-  const rentedCarsElement = document.getElementById("rentedCars");
-
-  if (totalCarsElement) {
-    totalCarsElement.textContent = cars.length;
-  }
-  if (availableCarsElement) {
-    availableCarsElement.textContent = cars.filter(
-      (car) => car.available
-    ).length;
-  }
-  if (rentedCarsElement) {
-    rentedCarsElement.textContent = cars.filter((car) => !car.available).length;
+  } catch {
+    alert("Failed to add car.");
   }
 }
 
@@ -229,234 +213,122 @@ function showAddCarModal() {
 }
 
 function closeModal() {
-  document.getElementById("addCarModal").style.display = "none";
-  document.getElementById("rentCarModal").style.display = "none";
+  document.querySelectorAll(".modal").forEach(m => m.style.display = "none");
 }
 
 function rentCar(carId) {
-  const car = cars.find((c) => c.id === carId);
+  const car = cars.find(c => c.id === carId);
   if (!car) return;
-
   if (car.available) {
-    const rentModal = document.getElementById("rentCarModal");
-    const rentForm = document.getElementById("rentCarForm");
-
-    rentForm.setAttribute("data-car-id", carId);
-    rentForm.setAttribute("data-car-price", car.price);
-
-    const modalTitle = rentModal.querySelector("h2");
-    modalTitle.innerHTML = `<i class="fas fa-key"></i> Rent ${car.model}`;
-
-    rentModal.style.display = "block";
+    const modal = document.getElementById("rentCarModal");
+    const form = document.getElementById("rentCarForm");
+    form.dataset.carId = carId;
+    form.dataset.carPrice = car.price;
+    modal.querySelector("h2").innerHTML = `<i class="fas fa-key"></i> Rent ${car.model}`;
+    modal.style.display = "block";
   } else {
     returnCar(carId);
   }
 }
 
-async function processRental(event) {
-  event.preventDefault();
-
-  const form = event.target;
-  const carId = form.getAttribute("data-car-id");
-  const car = cars.find((c) => c.id === carId);
-
+async function processRental(e) {
+  e.preventDefault();
+  const f = e.target;
+  const carId = f.dataset.carId;
+  const car = cars.find(c => c.id === carId);
   if (!car) return;
 
-  const rentalData = {
-    carId: carId,
+  const rental = {
+    carId,
     carModel: car.model,
-    customerName: form.querySelector('input[placeholder="Enter customer name"]')
-      .value,
-    phoneNumber: form.querySelector('input[placeholder="Enter phone number"]')
-      .value,
-    email: form.querySelector('input[placeholder="Enter email address"]').value,
-    rentalDate: form.querySelector('input[type="date"]').value,
-    numberOfDays: parseInt(
-      form.querySelector('input[placeholder="Enter number of days"]').value
-    ),
-    totalPrice:
-      car.price *
-      parseInt(
-        form.querySelector('input[placeholder="Enter number of days"]').value
-      ),
-    status: "active",
+    customerName: f.querySelector('[placeholder="Enter customer name"]').value,
+    phoneNumber: f.querySelector('[placeholder="Enter phone number"]').value,
+    email: f.querySelector('[placeholder="Enter email address"]').value,
+    rentalDate: f.querySelector('input[type="date"]').value,
+    numberOfDays: parseInt(f.querySelector('[placeholder="Enter number of days"]').value),
   };
+  rental.totalPrice = rental.numberOfDays * car.price;
+  rental.status = "active";
 
   try {
-    await addRentalAPI(rentalData);
-
-    await updateCarAPI(carId, {
-      ...car,
-      available: false,
-    });
-
-    alert(`Car "${car.model}" has been rented successfully!`);
-    form.reset();
+    await addRentalAPI(rental);
+    await updateCarAPI(carId, { ...car, available: false });
+    alert("Rental processed successfully!");
+    f.reset();
     closeModal();
-
     await Promise.all([fetchCars(), fetchRentals()]);
-  } catch (error) {
-    console.error("Rental error:", error);
-    alert("Failed to process rental. Please try again.");
+  } catch {
+    alert("Rental failed.");
   }
 }
 
-function renderRentals() {
-  const rentalsList = document.getElementById("rentalsList");
-  if (!rentalsList) return;
-
-  rentalsList.innerHTML = "";
-
-  rentals.forEach((rental) => {
-    const rentalItem = document.createElement("div");
-    rentalItem.className = "rental-item";
-    rentalItem.innerHTML = `
-            <div class="rental-info">
-                <h3>${rental.carModel}</h3>
-                <p>Customer: ${rental.customerName}</p>
-                <p>Phone: ${rental.phoneNumber}</p>
-                <p>Email: ${rental.email}</p>
-                <p>Rental Date: ${rental.rentalDate}</p>
-                <p>Duration: ${rental.numberOfDays} days</p>
-                <p>Total Price: $${rental.totalPrice}</p>
-            </div>
-        `;
-    rentalsList.appendChild(rentalItem);
-  });
-}
-
 async function deleteCar(carId) {
-  const car = cars.find((c) => c.id === carId);
-  if (!car) return;
-
-  const confirmDelete = confirm(
-    `Are you sure you want to delete ${car.model}?`
-  );
-
-  if (confirmDelete) {
+  if (confirm("Delete this car?")) {
     try {
       await deleteCarAPI(carId);
-      alert("Car has been deleted successfully!");
+      alert("Car deleted");
       await fetchCars();
-    } catch (error) {
-      alert("Failed to delete car. Please try again.");
+    } catch {
+      alert("Delete failed");
     }
   }
 }
 
 async function returnCar(carId) {
-  const car = cars.find((c) => c.id === carId);
+  const car = cars.find(c => c.id === carId);
   if (!car) return;
-
-  if (confirm(`Confirm return of ${car.model}?`)) {
+  if (confirm(`Return ${car.model}?`)) {
     try {
       await updateCarAPI(carId, { ...car, available: true });
-      alert(`${car.model} has been returned successfully!`);
+      alert("Car returned");
       await Promise.all([fetchCars(), fetchRentals()]);
-    } catch (error) {
-      alert("Failed to return car. Please try again.");
+    } catch {
+      alert("Return failed");
     }
   }
 }
 
 function searchCars() {
-  const searchTerm = document.getElementById("searchCars").value.toLowerCase();
-  const availabilityFilter =
-    document.getElementById("availabilityFilter").value;
-
-  const filteredCars = cars.filter((car) => {
-    const matchesSearch = car.model.toLowerCase().includes(searchTerm);
-    const matchesAvailability =
-      availabilityFilter === "all"
-        ? true
-        : availabilityFilter === "available"
-        ? car.available
-        : !car.available;
-
-    return matchesSearch && matchesAvailability;
-  });
-
-  renderFilteredCars(filteredCars);
+  const term = document.getElementById("searchCars").value.toLowerCase();
+  const filter = document.getElementById("availabilityFilter").value;
+  const filtered = cars.filter(c => c.model.toLowerCase().includes(term) && (filter === "all" || (filter === "available" ? c.available : !c.available)));
+  renderFilteredCars(filtered);
 }
 
-function renderFilteredCars(filteredCars) {
+function renderFilteredCars(filtered) {
   const carGrid = document.getElementById("carGrid");
   if (!carGrid) return;
-
-  carGrid.innerHTML = "";
-
-  if (filteredCars.length === 0) {
-    carGrid.innerHTML =
-      '<p class="no-results">No cars found matching your criteria.</p>';
-    return;
-  }
-
-  filteredCars.forEach((car) => {
-    const carCard = document.createElement("div");
-    carCard.className = "car-card";
-    carCard.innerHTML = `
-            <img src="${car.image}" alt="${car.model}" onerror="this.src='${
-      carImages[0]
-    }'">
-            <div class="car-info">
-                <h3>${car.model}</h3>
-                <p class="price">$${car.price} per day</p>
-                <p class="status ${car.available ? "available" : "rented"}">
-                    ${car.available ? "● Available" : "● Currently Rented"}
-                </p>
-                <div class="car-actions">
-                    <button onclick="${
-                      car.available
-                        ? `rentCar(${car.id})`
-                        : `returnCar(${car.id})`
-                    }" 
-                            class="${
-                              car.available ? "rent-btn" : "return-btn"
-                            }">
-                        ${car.available ? "Rent Now" : "Return Car"}
-                    </button>
-                    <button onclick="deleteCar(${car.id})" class="delete-btn">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-    carGrid.appendChild(carCard);
-  });
+  carGrid.innerHTML = filtered.map(car => `
+    <div class="car-card">
+      <img src="${car.image}" alt="${car.model}" onerror="this.src='${carImages[0]}'">
+      <div class="car-info">
+        <h3>${car.model}</h3>
+        <p class="price">$${car.price} per day</p>
+        <p class="status ${car.available ? "available" : "rented"}">${car.available ? "● Available" : "● Rented"}</p>
+        <div class="car-actions">
+          <button onclick="${car.available ? `rentCar('${car.id}')` : `returnCar('${car.id}')`}" class="${car.available ? "rent-btn" : "return-btn"}">
+            ${car.available ? "Rent Now" : "Return Car"}
+          </button>
+          <button onclick="deleteCar('${car.id}')" class="delete-btn"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    </div>
+  `).join("");
 }
-
-document.addEventListener("DOMContentLoaded", async () => {
-  checkLogin();
-
-  await Promise.all([fetchCars(), fetchRentals()]);
-
-  const addCarForm = document.getElementById("addCarForm");
-  if (addCarForm) {
-    addCarForm.addEventListener("submit", addCar);
-  }
-
-  const rentCarForm = document.getElementById("rentCarForm");
-  if (rentCarForm) {
-    rentCarForm.addEventListener("submit", processRental);
-  }
-
-  const searchInput = document.getElementById("searchCars");
-  if (searchInput) {
-    searchInput.addEventListener("input", searchCars);
-  }
-
-  const availabilityFilter = document.getElementById("availabilityFilter");
-  if (availabilityFilter) {
-    availabilityFilter.addEventListener("change", searchCars);
-  }
-});
-
-window.onclick = function (event) {
-  if (event.target.className === "modal") {
-    closeModal();
-  }
-};
 
 function redirectToCars() {
   window.location.href = "cars.html";
 }
+
+document.addEventListener("DOMContentLoaded", async () => {
+  checkLogin();
+  await Promise.all([fetchCars(), fetchRentals()]);
+  document.getElementById("addCarForm")?.addEventListener("submit", addCar);
+  document.getElementById("rentCarForm")?.addEventListener("submit", processRental);
+  document.getElementById("searchCars")?.addEventListener("input", searchCars);
+  document.getElementById("availabilityFilter")?.addEventListener("change", searchCars);
+});
+
+window.onclick = (e) => {
+  if (e.target.className === "modal") closeModal();
+};
